@@ -2,8 +2,6 @@ package com.pvub.reactivelongrunning;
 
 import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -16,6 +14,7 @@ import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
@@ -53,7 +52,7 @@ public class ApiVerticle extends AbstractVerticle {
   }
 
   @Override
-  public void start() throws Exception {
+  public void start(Promise<Void> startPromise) throws Exception {
     m_logger.info("Starting ApiVerticle");
 
     String             path_to_config = System.getProperty("reactiveapi.config", "conf/config.json");
@@ -68,9 +67,11 @@ public class ApiVerticle extends AbstractVerticle {
           m_logger.info("config retrieved");
           if (config.failed()) {
             m_logger.info("No config");
+            startPromise.fail(config.cause());
           } else {
             m_logger.info("Got config");
             startup(config.result());
+            startPromise.complete();
           }
         }
     );
@@ -86,8 +87,9 @@ public class ApiVerticle extends AbstractVerticle {
   }
 
   @Override
-  public void stop() throws Exception {
+  public void stop(Promise<Void> stopPromise) throws Exception {
     m_logger.info("Stopping ApiVerticle");
+    stopPromise.complete();
   }
 
   private void processConfig(JsonObject config) {

@@ -1,9 +1,6 @@
 package com.pvub.reactivelongrunning;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +9,7 @@ import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
@@ -21,8 +19,6 @@ public class ApiWorkerVerticle extends AbstractVerticle {
   private Logger                                m_logger;
   private Integer                               m_max_delay_milliseconds;
   private JsonObject                            m_config           = null;
-  private ExecutorService                       m_worker_executor  = null;
-  private AtomicLong                            m_latency          = new AtomicLong(0);
   private MessageConsumer<String>               worker_consumer    = null;
   private ConcurrentHashMap<String, JsonObject> activeTransactions = new ConcurrentHashMap<>();
 
@@ -31,7 +27,7 @@ public class ApiWorkerVerticle extends AbstractVerticle {
   }
 
   @Override
-  public void start() throws Exception {
+  public void start(Promise<Void> startPromise) throws Exception {
     m_logger = LoggerFactory.getLogger("WORKER");
 
     String             path_to_config = System.getProperty("reactiveapi.config", "conf/config.json");
@@ -47,9 +43,11 @@ public class ApiWorkerVerticle extends AbstractVerticle {
           m_logger.info("config retrieved");
           if (config.failed()) {
             m_logger.info("No config");
+            startPromise.fail(config.cause());
           } else {
             m_logger.info("Got config");
             startup(config.result());
+            startPromise.complete();
           }
         }
     );
@@ -64,7 +62,6 @@ public class ApiWorkerVerticle extends AbstractVerticle {
     m_max_delay_milliseconds = m_config.getInteger("max-delay-milliseconds", 1000);
     Integer worker_pool_size = m_config.getInteger("worker-pool-size", Runtime.getRuntime().availableProcessors() * 2);
     m_logger.info("max_delay_milliseconds={} worker_pool_size={}", m_max_delay_milliseconds, worker_pool_size);
-    m_worker_executor = Executors.newFixedThreadPool(worker_pool_size);
     worker_consumer = vertx.eventBus().consumer("WORKER");
     worker_consumer.handler(m -> {
       handleRequest(m);
@@ -111,8 +108,8 @@ public class ApiWorkerVerticle extends AbstractVerticle {
   }
 
   @Override
-  public void stop() throws Exception {
+  public void stop(Promise<Void> stopPromise) throws Exception {
     m_logger.info("Stopping ApiWorkerVerticle");
-    m_worker_executor.shutdown();
+    stopPromise.complete();
   }
 }
