@@ -1,6 +1,6 @@
 # 用Vert.X WebSockets进行响应式应用程序开发
 
-> 项目地址: 
+> 项目地址: https://github.com/wjw465150/ReactiveLongRunning
 
 ## 处理长时间运行的操作
 
@@ -457,7 +457,7 @@ private void handleMessage(final String messageStr) {
 
 我们现在有一个 JS 前端，它可以通过 HTTP 发出事务请求，并在事务处理期间通过 WebSocket 侦听事务更新。
 
-可以在此 [演示](https://github.com/pvub/demos/tree/master/ReactiveLongRunning) 中找到完整的工作示例。
+可以在此 [演示](https://github.com/wjw465150/ReactiveLongRunning) 中找到完整的工作示例。
 
 
 # 如果运行示例程序
