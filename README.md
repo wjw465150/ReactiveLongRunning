@@ -106,7 +106,7 @@ m_router = Router.router(vertx);
 // 一个简单的transaction端点
 m_router.get("/api/transaction/:customer/:tid").handler(this::handleTransaction);
 // 提供静态内容（如 HTML 和 JS 文件）的处理程序
-m_router.route("/static/*").handler(StaticHandler.create());
+m_router.route().handler(StaticHandler.create());
 ....
 ....
 // 创建 HTTP 服务器
@@ -127,7 +127,7 @@ vertx.createHttpServer()
     );
 ```
 
-Now that we defined a basic HTTP Server to process incoming HTTP requests, we are going to add a handler to process incoming WebSocket requests. In order to make the creation and use of WebSockets more easier on the client, we are going to use a popular WebSockets based JS library called SockJS.
+现在我们定义了一个基本的 HTTP 服务器来处理传入的 HTTP 请求，我们将添加一个处理程序来处理传入的 WebSocket 请求。 为了在客户端更轻松地创建和使用 WebSockets，我们将使用一个流行的基于 WebSockets 的 JS 库，称为 SockJS。
 
 # SockJS是什么?
 
@@ -472,7 +472,7 @@ java -Dreactiveapi.config=conf/config.json -jar build/libs/ReactiveLongRunning-1
 ```
 
 ## 使用
-用浏览器打开: http://localhost:8080/static/index.html
+用浏览器打开: http://localhost:8080/
 指定事务ID和客户ID，然后提交。
 
 最后运行结果如下图所示:

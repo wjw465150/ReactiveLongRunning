@@ -37,8 +37,7 @@ public class ApiVerticle extends AbstractVerticle {
   private Integer      m_max_delay_milliseconds;
   private JsonObject   m_config = null;
 
-  //private ExecutorService                             m_worker_executor    = null;
-  private DeploymentOptions m_deploymentOptions = null;
+  private DeploymentOptions m_deploymentOptions = new DeploymentOptions();
 
   private AtomicLong                                  m_latency            = new AtomicLong(0);
   private Integer                                     m_worker_count       = 0;
@@ -98,9 +97,6 @@ public class ApiVerticle extends AbstractVerticle {
     m_max_delay_milliseconds = m_config.getInteger("max-delay-milliseconds", 1000);
     Integer worker_pool_size = m_config.getInteger("worker-pool-size", Runtime.getRuntime().availableProcessors() * 2);
     m_logger.info("max_delay_milliseconds={} worker_pool_size={}", m_max_delay_milliseconds, worker_pool_size);
-    if (m_deploymentOptions == null) {
-      m_deploymentOptions = new DeploymentOptions();
-    }
     m_deploymentOptions
         .setWorker(true)
         .setConfig(m_config)
@@ -137,7 +133,7 @@ public class ApiVerticle extends AbstractVerticle {
 
     m_router.get("/health").handler(this::generateHealth);
     m_router.get("/api/transaction/:customer/:tid").handler(this::handleTransaction);
-    m_router.route("/static/*").handler(StaticHandler.create());
+    m_router.route().handler(StaticHandler.create());
 
     // Create the SockJS handler. Specify options.
     SockJSHandlerOptions options   = new SockJSHandlerOptions()
@@ -203,7 +199,7 @@ public class ApiVerticle extends AbstractVerticle {
           return;
         }
         response
-            .setStatusCode(201)
+            .setStatusCode(201)  //201 (已创建)请求成功，服务器创建了新资源
             .putHeader("content-type",
                 "application/json; charset=utf-8")
             .end(resp);
@@ -248,7 +244,6 @@ public class ApiVerticle extends AbstractVerticle {
 
   private void addWorker() {
     m_current_workers.incrementAndGet();
-    JsonObject config = new JsonObject().put("instance", m_current_workers.get());
     vertx.deployVerticle(ApiWorkerVerticle.class.getName(), m_deploymentOptions, res -> {
       if (res.failed()) {
         m_logger.error("Failed to deploy worker verticle {}", ApiWorkerVerticle.class.getName(), res.cause());
